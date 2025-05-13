@@ -1,21 +1,17 @@
-def main():
-    """
-An App to show the current time.
-"""
-
 from datetime import datetime
 
 from textual.app import App, ComposeResult
-from textual.widgets import Digits
+from textual.widgets import Digits, Input
 
 
 class ClockApp(App):
     CSS = """
-    Screen { align: center middle; }
+    Screen { align: center bottom; }
     Digits { width: auto; }
     """
 
     def compose(self) -> ComposeResult:
+        yield Input(placeholder="")
         yield Digits("")
 
     def on_ready(self) -> None:
