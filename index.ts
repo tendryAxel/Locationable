@@ -1,4 +1,4 @@
-var term = require( 'terminal-kit' ).terminal ;
+import term from 'terminal-kit';
 import { DateRange } from "./dateUtils";
 
 export class Locationable {
@@ -27,49 +27,56 @@ export class Locationable {
 }
   
 
-const voiture = new Locationable("Voiture")
-const maison = new Locationable("Maison")
-const assiete = new Locationable("Assiete")
+const terminal = term.terminal;
 
-var items: Locationable[] = [ voiture, maison, assiete ] ;
+const items: Locationable[] = [
+  new Locationable('Voiture'),
+  new Locationable('Maison'),
+  new Locationable('Assiette'),
+];
 
-var options = {
-	y: 1 ,
-	style: term.inverse ,
-	selectedStyle: term.dim.blue.bgGreen
-} ;
-
-var choix: Locationable = items[0];
-
-function question() {
-    term.clear() ;
-
-    term.singleLineMenu( items , options , function( error: any , response: Locationable ) {
-        if (choix)
-            choix = response;
-    } ) ;
-    term.clear() ;
-    console.log(choix);
-
-    choix.louer (new DateRange(
-        new Date(term( 'Date debut: ' )),
-        new Date(term( 'Date fin: ' ))
-    ));
-    term.clear() ;
-    
-	term( 'Continuer? [Y|n]\n' ) ;
-	
-	term.yesOrNo( { yes: [ 'y' , 'ENTER' ] , no: [ 'n' ] } , function( error: any , result: boolean ) {
-	
-		if ( result ) {
-			term.green( "\nNext\n=>" ) ;
-			question() ;
-		}
-		else {
-			term.red( "Ok bye XD\n" ) ;
-			process.exit() ;
-		}
-	} ) ;
+async function askDate(prompt: string): Promise<Date> {
+  terminal (prompt);
+  const response = await terminal.inputField({ echo: true }).promise;
+  return response ? new Date(response.trim()) : new Date();
 }
 
-question() ;
+async function askYesNo(prompt: string): Promise<boolean> {
+  terminal(prompt);
+  const result = await terminal.yesOrNo({ yes: ['y', 'ENTER'], no: ['n'] }).promise;
+  return result ? result : false;
+}
+
+async function question(): Promise<void> {
+  terminal.clear();
+
+  const menuItems = items.map((item) => item.name);
+  const { selectedIndex } = await terminal.singleLineMenu(menuItems, {}).promise;
+  const choix = items[selectedIndex];
+
+  terminal.clear();
+  terminal.green(`Locationable choisi : ${choix.name}\n`);
+
+  try {
+    const dateDebut = await askDate('Date début (AAAA-MM-JJ): ');
+    terminal ("\n")
+    const dateFin = await askDate('Date fin   (AAAA-MM-JJ): ');
+
+    choix.louer(new DateRange(dateDebut, dateFin));
+    terminal.green(`Réservation réussie : ${choix.locationDates.map(String).join(', ')}\n`);
+  } catch (error: any) {
+    terminal.red(`Erreur: ${error.message}\n`);
+  }
+
+  const continuer = await askYesNo('Continuer? [Y|n]\n');
+
+  if (continuer) {
+    terminal.green('\nNext\n=>\n');
+    await question();
+  } else {
+    terminal.red('Ok bye XD\n');
+    process.exit();
+  }
+}
+
+question();
