@@ -1,5 +1,5 @@
 from typing import List
-from date_range import DateRange
+from core.date_range import DateRange
 
 class Locationable:
     def __init__(self, name: str):
